@@ -1,0 +1,53 @@
+[package]
+name = "veramark"
+version = "0.1.0"
+description = "Overlay configurable AI attribution labels and embed C2PA provenance manifests into images."
+authors = ["VeraMark"]
+edition = "2021"
+
+[lib]
+name = "veramark_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+rayon = "1"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp", "tiff", "ico"] }
+c2pa = { version = "0.90", default-features = false, features = ["file_io", "rust_native_crypto"] }
+usvg = { version = "0.45", default-features = false, features = ["text"] }
+resvg = { version = "0.45", default-features = false, features = ["text"] }
+tiny-skia = "0.11"
+notify = "6"
+glob = "0.3"
+base64 = "0.22"
+chrono = "0.4"
+log = "0.4"
+env_logger = "0.11"
+
+[dev-dependencies]
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+serde_json = "1"
+c2pa = { version = "0.90", default-features = false, features = ["file_io", "rust_native_crypto"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
+
+[profile.dev.package.c2pa]
+opt-level = 1
+
+[profile.dev.package.resvg]
+opt-level = 1
+
+[profile.dev.package.usvg]
+opt-level = 1

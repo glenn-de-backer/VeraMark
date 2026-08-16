@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90">
+  <rect x="1" y="1" width="298" height="88" rx="18" fill="#18181b" stroke="#f59e0b" stroke-width="2"/>
+  <path d="M30 45 l14 14 l26 -30" fill="none" stroke="#f59e0b" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="88" y="50" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#fbbf24">VERIFIED</text>
+</svg>
