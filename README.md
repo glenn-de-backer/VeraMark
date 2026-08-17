@@ -1,43 +1,48 @@
 # VeraMark
 
-**VeraMark** is a high-performance desktop application designed to label, certify, and embed provenance data into AI-generated or edited imagery. It simultaneously applies visible on-canvas badges and embeds cryptographic [C2PA](https://c2pa.org/) / Content Authenticity Initiative (CAI) metadata directly into exported image files.
+**VeraMark** makes it simple to mark, certify, and prove the origin of AI-generated or edited images. 
+
+When you generate or modify images with AI, proving where they came from or being transparent about how they were made can be challenging. VeraMark solves this by doing two things at once:
+1. **Visible Badges:** It places a clear, standardized label or icon (such as the official EU AI Act badges) directly on your image.
+2. **Invisible Digital Passports:** It embeds secure, tamper-proof metadata ([C2PA](https://c2pa.org/) Content Credentials) directly into the image file. Anyone viewing or verifying the file can see who created it, what tools were used, and whether it has been altered.
+
+It runs locally on your computer as a fast, private desktop app with live previews and batch-processing support.
 
 ---
 
 ## Key Highlights
 
-- **Dual Attribution:** Combines visible human-readable badges with invisible, machine-readable C2PA manifests.
-- **EU AI Act Article 50 Ready:** Meets transparency and machine-readability compliance mandates.
-- **High-Performance Architecture:** Built with Tauri v2, a Rust backend, Rayon-parallel batch processing, and a Vite + React + TypeScript frontend.
-- **WYSIWYG Fidelity:** Identical transform math between frontend canvas preview and Rust compositor.
+* **Dual Attribution:** Combines visible on-canvas badges with invisible, machine-readable C2PA manifests.
+* **EU AI Act Article 50 Ready:** Meets transparency and machine-readability compliance mandates specifically for AI-generated and edited images.
+* **High-Performance Architecture:** Built with Tauri v2, a Rust backend, Rayon-parallel batch processing, and a Vite + React + TypeScript frontend.
+* **WYSIWYG Fidelity:** Identical transform math between frontend canvas preview and Rust compositor.
 
 ---
 
 ## Core Features
 
-- **Single & Batch Processing:** Process individual files with fine-grained anchor/scale controls or run parallelized folder conversions with live progress updates.
-- **C2PA Provenance Manifests:** Generates `c2pa.created` and `c2pa.edited` action assertions, claim generator data, trained-source flags, and cryptographic `ps256` signatures via the `c2pa-rs` Builder API.
-- **Format Support:** High-fidelity PNG (8/16-bit, alpha preservation, best-effort ICC) and configurable JPEG output.
-- **Live Directory Watching:** Automatically registers new overlay assets dropped into the labels directory.
+* **Single & Batch Processing:** Process individual files with fine-grained anchor/scale controls or run parallelized folder conversions with live progress updates.
+* **C2PA Provenance Manifests:** Generates `c2pa.created` and `c2pa.edited` action assertions, claim generator data, trained-source flags, and cryptographic `ps256` signatures via the `c2pa-rs` Builder API.
+* **Format Support:** High-fidelity PNG (8/16-bit, alpha preservation, best-effort ICC) and configurable JPEG output.
+* **Live Directory Watching:** Automatically registers new overlay assets dropped into the labels directory.
 
 ---
 
 ## EU AI Act Article 50 Compliance & Icon Catalog
 
-**Article 50** of the EU AI Act mandates that providers of AI systems generating synthetic audio, image, video, or text ensure outputs are marked in a machine-readable format and detectable as artificially generated or manipulated.
+**Article 50** of the EU AI Act mandates that providers and deployers of AI systems generating synthetic imagery ensure outputs are marked in a machine-readable format and detectable as artificially generated or manipulated.
 
 ### Official EU Icons
-
 VeraMark includes the official European Commission visual labelling assets:
-- **Source:** [EU Icons for Labelling AI-Generated Content](https://digital-strategy.ec.europa.eu/en/policies/eu-icons-labelling-ai-generated-content)
-- **Custom Labels:** Add any custom `.svg` or `.png` to `assets/labels/` (or override via `VERAMARK_LABELS_DIR`). Assets are automatically scaled relative to `min(imageWidth, imageHeight)`.
+* **Source:** [EU Icons for Labelling AI-Generated Content](https://digital-strategy.ec.europa.eu/en/policies/eu-icons-labelling-ai-generated-content)
+* **Custom Labels:** Add any custom `.svg` or `.png` to `assets/labels/` (or override via `VERAMARK_LABELS_DIR`). Assets are automatically scaled relative to `min(imageWidth, imageHeight)`.
 
-### Compliance Mapping
+### Compliance Mapping (Images)
 
 | Requirement | Implementation in VeraMark |
 | :--- | :--- |
-| **Machine-Readable Mark** | Cryptographically bound C2PA manifest (`c2pa.created` / action assertions). |
-| **Human-Visible Disclosure** | Standardized visual badges, including the official EU AI Act icons. |
+| **Machine-Readable Mark** | Cryptographically bound C2PA manifest (`c2pa.created` / action assertions) embedded directly in the image. |
+| **Human-Visible Disclosure** | Standardized visual badges composited onto the image canvas, including official EU AI Act icons. |
 | **Tamper Evidence** | Cryptographic hash binding invalidates verification if pixel data is stripped or edited. |
 | **Interoperability** | Open C2PA standard readable by standard verifiers and `contentcredentials.org/verify`. |
 
@@ -73,7 +78,7 @@ openssl x509 -req -in leaf.csr -CA ca_cert.pem -CAkey ca_key.pem -CAcreateserial
 cat leaf_cert.pem ca_cert.pem > signer_chain.pem
 ```
 
-> Supply `leaf_key.pem` and `signer_chain.pem` in the **Provenance (C2PA)** panel.
+Supply `leaf_key.pem` and `signer_chain.pem` in the **Provenance (C2PA)** panel.
 
 ---
 
@@ -104,14 +109,17 @@ src-tauri/                   Backend (Rust + Tauri v2)
 
 ---
 
-## Getting Started
+## Platform Availability & Getting Started
+
+### Platform Support
+* **Windows:** Pre-built binaries (`.msi` / `.exe`) are readily available.
+* **macOS & Linux:** Fully buildable from source via the standard Tauri v2 toolchain.
 
 ### Prerequisites
-
-- **OS:** Windows 10/11 (with WebView2) / macOS / Linux
-- **Rust:** Stable MSVC / GCC toolchain
-- **Node.js:** Node 20+ (Node 24 tested)
-- **Build Tools:** Visual Studio 2022 C++ Build Tools (Windows MSVC Linker) or equivalent C toolchain
+* **OS:** Windows 10/11 (with WebView2), macOS, or Linux
+* **Rust:** Stable toolchain (MSVC on Windows, GCC/Clang on Linux/macOS)
+* **Node.js:** Node 20+ (Node 24 tested)
+* **Build Tools:** Visual Studio 2022 C++ Build Tools (Windows) or platform C toolchain
 
 ### Installation & Development
 
@@ -138,6 +146,6 @@ cargo test
 
 ## Known Limitations
 
-- **JPEG Metadata:** Full ICC/EXIF pass-through is currently prioritized for PNG workflows; JPEG metadata retention is in development.
-- **Remote Signers:** Remote/cloud signing endpoints and RFC 3161 TSA URLs are supported by the underlying `c2pa-rs` library, with UI controls planned for a future release.
-- **Assertion Granularity:** `c2pa.training-mining` assertions are planned; training state currently maps to the `digitalSourceType` action.
+* **JPEG Metadata:** Full ICC/EXIF pass-through is currently prioritized for PNG workflows; JPEG metadata retention is in development.
+* **Remote Signers:** Remote/cloud signing endpoints and RFC 3161 TSA URLs are supported by the underlying `c2pa-rs` library, with UI controls planned for a future release.
+* **Assertion Granularity:** `c2pa.training-mining` assertions are planned; training state currently maps to the `digitalSourceType` action.
