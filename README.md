@@ -14,10 +14,11 @@ It runs locally on your computer as a fast, private desktop app with live previe
 
 ## Key Highlights
 
-* **Dual Attribution:** Combines visible on-canvas badges with invisible, machine-readable C2PA manifests.
 * **EU AI Act Article 50 Ready:** Meets transparency and machine-readability compliance mandates specifically for AI-generated and edited images.
-* **High-Performance Architecture:** Built with Tauri v2, a Rust backend, Rayon-parallel batch processing, and a Vite + React + TypeScript frontend.
-* **WYSIWYG Fidelity:** Identical transform math between frontend canvas preview and Rust compositor.
+* **Dual Attribution:** Combines visible on-canvas badges with invisible, machine-readable C2PA manifests.
+* **High-Speed Batch Processing:** Process and sign entire directories in parallel with live progress updates.
+* **Dynamic Auto-Scaling:** Automatically proportions labels to image dimensions with precise anchor and offset controls.
+* **WYSIWYG Fidelity:** Guaranteed 1:1 parity between canvas preview positioning and final exported output.
 
 ---
 
