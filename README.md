@@ -14,21 +14,21 @@ It runs locally on your computer as a fast, private desktop app with live previe
 
 ## Key Highlights
 
-* **EU AI Act Article 50 Ready:** Meets transparency and machine-readability compliance mandates specifically for AI-generated and edited images[cite: 3].
-* **Dual Attribution:** Combines visible on-canvas badges with invisible, machine-readable C2PA manifests[cite: 3].
-* **High-Speed Batch Processing:** Process and sign entire directories in parallel with live progress updates[cite: 3].
-* **Dynamic Auto-Scaling:** Automatically proportions labels to image dimensions with precise anchor and offset controls[cite: 3].
-* **WYSIWYG Fidelity:** Guaranteed 1:1 parity between canvas preview positioning and final exported output[cite: 3].
+* **EU AI Act Article 50 Ready:** Meets transparency and machine-readability compliance mandates specifically for AI-generated and edited images.
+* **Dual Attribution:** Combines visible on-canvas badges with invisible, machine-readable C2PA manifests.
+* **High-Speed Batch Processing:** Process and sign entire directories in parallel with live progress updates.
+* **Dynamic Auto-Scaling:** Automatically proportions labels to image dimensions with precise anchor and offset controls.
+* **WYSIWYG Fidelity:** Guaranteed 1:1 parity between canvas preview positioning and final exported output.
 
 ---
 
 ## Core Features
 
-* **Precision Placement & Transform:** Anchor badges to corners, center, or edges with fine-tuned margin, scale, and offset controls[cite: 3].
-* **Single & Batch Processing:** Process individual files with instant WYSIWYG feedback or run parallelized folder conversions with live progress updates[cite: 3].
-* **C2PA Provenance Manifests:** Generates `c2pa.created` and `c2pa.edited` action assertions, claim generator data, trained-source flags, and cryptographic `ps256` signatures via the `c2pa-rs` Builder API[cite: 3].
-* **Configurable Export Formats:** Export to high-fidelity PNG (8/16-bit, alpha preservation, best-effort ICC) or customizable JPEG with fine-grained compression quality controls[cite: 3].
-* **Live Directory Watching:** Automatically registers new overlay assets dropped into the labels directory[cite: 3].
+* **Precision Placement & Transform:** Anchor badges to corners, center, or edges with fine-tuned margin, scale, and offset controls.
+* **Single & Batch Processing:** Process individual files with instant WYSIWYG feedback or run parallelized folder conversions with live progress updates.
+* **C2PA Provenance Manifests:** Generates `c2pa.created` and `c2pa.edited` action assertions, claim generator data, trained-source flags, and cryptographic `ps256` signatures via the `c2pa-rs` Builder API.
+* **Configurable Export Formats:** Export to high-fidelity PNG (8/16-bit, alpha preservation, best-effort ICC) or customizable JPEG with fine-grained compression quality controls.
+* **Live Directory Watching:** Automatically registers new overlay assets dropped into the labels directory.
 
 ---
 
@@ -49,6 +49,24 @@ VeraMark includes the official European Commission visual labelling assets:
 | **Human-Visible Disclosure** | Standardized visual badges composited onto the image canvas, including official EU AI Act icons. |
 | **Tamper Evidence** | Cryptographic hash binding invalidates verification if pixel data is stripped or edited. |
 | **Interoperability** | Open C2PA standard readable by standard verifiers and `contentcredentials.org/verify`. |
+
+### Adding Custom Labels
+
+VeraMark bundles the official EU badges, but adding your own custom badges takes only a couple of steps. No recompile or restart is needed.
+
+1. **Locate the labels directory.** In a source or dev build this is `assets/labels/` at the project root. In an installed build it lives at `assets/labels` next to the application executable. To point VeraMark at any folder of your choosing instead, set the `VERAMARK_LABELS_DIR` environment variable to that folder ahead of launch.
+
+2. **Copy your badge file into it.** Only two file types are recognized:
+   * `.svg` — vector badges that rasterize crisply at any export size.
+   * `.png` — raster badges. Use a transparent background so the badge composites cleanly onto the image.
+
+   Anything else (`.jpg`, `.webp`, and so on) is ignored, and files must sit **directly** in the folder — subfolders are not scanned.
+
+3. **Your badge appears instantly.** VeraMark watches the directory while running, so the **Label Catalog** panel refreshes automatically as soon as files are added, changed, or removed. A **Refresh** button at the bottom of the catalog lets you force a rescan at any time.
+
+4. **Select it.** The new badge shows up in the **Label Catalog** grid, named after its file name (without the extension) and sorted alphabetically. Click it to apply it to the image.
+
+Badges are automatically scaled relative to `min(imageWidth, imageHeight)` with the height preserving aspect ratio, so any image ratio works. Fine-tune final placement with the anchor, scale, and offset controls — the canvas preview stays in exact sync with the exported output.
 
 ---
 

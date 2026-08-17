@@ -3,7 +3,7 @@ use std::io::BufWriter;
 use std::path::Path;
 
 use image::ExtendedColorType;
-use image::{GenericImageView, ImageEncoder as _, RgbaImage};
+use image::{ImageEncoder as _, RgbaImage};
 
 use crate::engine::compositor::Composited;
 use crate::models::ExportFormat;
