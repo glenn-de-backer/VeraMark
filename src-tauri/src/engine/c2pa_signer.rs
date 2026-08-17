@@ -20,6 +20,32 @@ const DIGITAL_SOURCE_TRAINED: &str =
 const DIGITAL_SOURCE_CREATED: &str =
     "http://cv.iptc.org/newscodes/digitalsourcetype/algorithmicMedia";
 
+/// Validates that the PEM key/certificate pair can be loaded into a C2PA
+/// signer context — the exact path `embed_manifest` uses. Lets the UI show
+/// a live [key: valid/invalid] pill instead of only failing at export time.
+pub fn validate_signer_files(
+    key_path: &str,
+    cert_path: &str,
+) -> Result<(), C2paError> {
+    let private_key = std::fs::read_to_string(key_path)?;
+    let sign_cert = std::fs::read_to_string(cert_path)?;
+
+    let settings_json = json!({
+        "signer": {
+            "local": {
+                "alg": "ps256",
+                "sign_cert": sign_cert,
+                "private_key": private_key,
+            }
+        }
+    })
+    .to_string();
+
+    let settings = Settings::new().with_json(&settings_json)?;
+    Context::new().with_settings(settings)?;
+    Ok(())
+}
+
 /// Embeds and signs a C2PA manifest into the image at `source_path`,
 /// replacing it in place (via a temp file + rename to guarantee atomicity
 /// and to satisfy c2pa's "destination must not exist" contract).

@@ -19,15 +19,16 @@ pub struct TransformConfig {
     pub anchor: Anchor,
     /// Normalized relative scale (0.01..=1.0) of the image bounding box.
     pub scale: f32,
-    /// X offset — absolute pixels, or % of image width when `offset_is_percent`.
+    /// Non-negative X offset in px from the anchor point, always moving the
+    /// label toward the image interior (negatives are clamped to 0).
     pub offset_x: i32,
-    /// Y offset — absolute pixels, or % of image height when `offset_is_percent`.
+    /// Non-negative Y offset in px from the anchor point, always moving the
+    /// label toward the image interior (negatives are clamped to 0).
     pub offset_y: i32,
-    pub offset_is_percent: bool,
 }
 
 /// Mirrors `src/models/c2pa.ts`.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct C2paSettings {
     pub enabled: bool,

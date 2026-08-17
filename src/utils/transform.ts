@@ -51,12 +51,40 @@ function labelPivot(anchor: Anchor, labelW: number, labelH: number): { x: number
 }
 
 /**
+ * Axis direction a positive offset moves the label toward the image interior,
+ * per anchor. Mirrored EXACTLY by `engine::compositor::offset_direction`.
+ *
+ * - Corner / edge anchors: the offset always pushes away from the anchored
+ *   edge (e.g. `BottomRight` nudge = left/up, `TopLeft` nudge = right/down).
+ * - Center / centered anchors: there is no edge to push away from, so +X
+ *   always moves right and +Y always moves down (fixed convention).
+ *
+ * Offsets are always non-negative magnitudes.
+ */
+export function offsetDirection(anchor: Anchor): { x: 1 | -1; y: 1 | -1 } {
+  switch (anchor) {
+    case "TopLeft":
+    case "TopCenter":
+    case "Center":
+      return { x: 1, y: 1 };
+    case "TopRight":
+      return { x: -1, y: 1 };
+    case "BottomLeft":
+    case "BottomCenter":
+      return { x: 1, y: -1 };
+    case "BottomRight":
+      return { x: -1, y: -1 };
+  }
+}
+
+/**
  * `OverlayTransformBuilder` equivalent. Computes the destination rectangle of
  * the label inside the image:
  *
  *   1. Label width = min(imageW, imageH) × scale  (aspect preserved)
  *   2. Label pivot snaps to the cardinal anchor point of the image
- *   3. Pivot is shifted by the X/Y offset before being clamped fully on-canvas
+ *   3. Pivot is shifted by the non-negative X/Y offset (always toward the
+ *      image interior from the anchor) before being clamped fully on-canvas
  *
  * This function is mirrored EXACTLY by `engine::compositor` on the Rust side
  * so the live preview is WYSIWYG with the exported result.
@@ -79,11 +107,15 @@ export function computeOverlayRect(
   const imagePt = anchorPoint(transform.anchor, imageWf, imageHf);
   const pivot = labelPivot(transform.anchor, labelWidth, labelHeight);
 
-  const offsetX = transform.offsetIsPercent ? (imageWf * transform.offsetX) / 100 : transform.offsetX;
-  const offsetY = transform.offsetIsPercent ? (imageHf * transform.offsetY) / 100 : transform.offsetY;
+  // Non-negative magnitude; negative values are rejected (clamped to 0).
+  const offsetX = Math.max(0, transform.offsetX);
+  const offsetY = Math.max(0, transform.offsetY);
 
-  let x = Math.round(imagePt.x - pivot.x + offsetX);
-  let y = Math.round(imagePt.y - pivot.y + offsetY);
+  // Positive offsets always push the label toward the image interior.
+  const direction = offsetDirection(transform.anchor);
+
+  let x = Math.round(imagePt.x - pivot.x + direction.x * offsetX);
+  let y = Math.round(imagePt.y - pivot.y + direction.y * offsetY);
 
   // Keep the label fully visible inside the image bounds.
   x = Math.round(clamp(x, 0, imageWf - labelWidth));

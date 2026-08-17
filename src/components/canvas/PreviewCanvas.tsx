@@ -1,12 +1,10 @@
-import { open } from "@tauri-apps/plugin-dialog";
 import { Button } from "../ui/Button";
+import { Spinner } from "../ui/Spinner";
+import { BatchGallery } from "./BatchGallery";
 import { OverlayCanvas } from "./OverlayCanvas";
-import { tauri } from "../../services/tauri";
+import type { ManifestReadResult } from "../../models/c2pa";
+import { useImageActions } from "../../hooks/useImageActions";
 import { useVeraMarkStore } from "../../stores/useVeraMarkStore";
-
-const IMAGE_FILTERS = [
-  { name: "Images", extensions: ["png", "jpg", "jpeg", "webp", "bmp", "tiff", "gif"] },
-];
 
 function EmptyState({
   title,
@@ -35,7 +33,9 @@ function EmptyState({
 export function PreviewCanvas() {
   const mode = useVeraMarkStore((state) => state.mode);
   const singleImage = useVeraMarkStore((state) => state.singleImage);
-  const batchImages = useVeraMarkStore((state) => state.batchImages);
+  const singleImagePath = useVeraMarkStore((state) => state.singleImagePath);
+  const openManifest = useVeraMarkStore((state) => state.openManifest);
+  const batchFiles = useVeraMarkStore((state) => state.batchFiles);
   const labels = useVeraMarkStore((state) => state.labels);
   const selectedLabelId = useVeraMarkStore((state) => state.selectedLabelId);
   const transform = useVeraMarkStore((state) => state.transform);
@@ -43,65 +43,31 @@ export function PreviewCanvas() {
   const progress = useVeraMarkStore((state) => state.progress);
   const lastMessage = useVeraMarkStore((state) => state.lastMessage);
   const lastError = useVeraMarkStore((state) => state.lastError);
+  const imageLoading = useVeraMarkStore((state) => state.imageLoading);
+  const { openImage, pickBatchInput } = useImageActions();
 
   const selectedLabel = labels.find((label) => label.id === selectedLabelId) ?? null;
   const labelSrc = selectedLabel?.dataUrl ?? null;
 
-  async function openImage() {
-    const path = await open({
-      multiple: false,
-      filters: IMAGE_FILTERS,
-      title: "Select an image",
-    });
-    if (typeof path !== "string") return;
-    try {
-      const preview = await tauri.previewImage(path, 1920);
-      useVeraMarkStore.getState().setSingleImage(preview, path);
-      useVeraMarkStore.getState().setLastError(null);
-    } catch (error) {
-      useVeraMarkStore.getState().setLastError(String(error));
-    }
-  }
-
-  async function batchPickInput() {
-    const dir = await open({
-      directory: true,
-      multiple: false,
-      title: "Select input directory",
-    });
-    if (typeof dir !== "string") return;
-    const store = useVeraMarkStore.getState();
-    store.setBatchInputDir(dir);
-    try {
-      const files = await tauri.listBatchImages(dir);
-      const previews = [];
-      for (const file of files.slice(0, 12)) {
-        try {
-          previews.push(await tauri.previewImage(file.path, 320));
-        } catch {
-          // Thumbnails that fail to render are skipped; batch reports real errors.
-        }
-      }
-      store.setBatchImages(previews);
-      store.setLastError(null);
-    } catch (error) {
-      store.setLastError(String(error));
-    }
-  }
-
-  const gallery = mode === "batch" ? batchImages.slice(0, 12) : [];
-
   return (
     <div className="relative flex h-full flex-col">
+      {imageLoading && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-zinc-950/50 backdrop-blur-[2px]">
+          <Spinner className="h-9 w-9" />
+          <span className="text-xs font-medium text-zinc-300">Loading…</span>
+        </div>
+      )}
       {batchRunning && (
         <div className="absolute inset-x-0 top-0 z-10 border-b border-zinc-800 bg-zinc-900/95 px-4 py-2 backdrop-blur">
           {progress ? (
             <div className="flex items-center gap-3">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800">
+              <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-zinc-700">
                 <div
                   className="h-full rounded-full bg-sky-500 transition-all"
                   style={{
-                    width: `${progress.total > 0 ? (progress.done / progress.total) * 100 : 0}%`,
+                    width: `${Math.round(
+                      (progress.done / Math.max(progress.total, 1)) * 100,
+                    )}%`,
                   }}
                 />
               </div>
@@ -117,7 +83,7 @@ export function PreviewCanvas() {
           )}
         </div>
       )}
-{mode === "single" ? (
+      {mode === "single" ? (
         singleImage ? (
           <>
             <div className="min-h-0 flex-1 p-4">
@@ -129,9 +95,28 @@ export function PreviewCanvas() {
                 transform={transform}
               />
             </div>
-            <div className="flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900/80 px-4 py-2 text-xs text-zinc-400">
-              <span className="truncate font-mono">
-                {fileBaseLabel(useVeraMarkStore.getState().singleImagePath)}
+            <div className="flex items-center gap-3 border-t border-zinc-800 bg-zinc-900/80 px-3 py-1.5 text-[11px] text-zinc-400">
+              {lastError ? (
+                <span
+                  className="min-w-0 truncate text-red-300"
+                  title={lastError}
+                >
+                  {lastError}
+                </span>
+              ) : lastMessage ? (
+                <span className="min-w-0 truncate text-sky-300">
+                  {lastMessage}
+                </span>
+              ) : (
+                <span className="min-w-0 truncate font-mono">
+                  {fileBaseLabel(singleImagePath)}
+                </span>
+              )}
+              <span
+                className="ml-auto min-w-0 truncate"
+                title={manifestReadout(openManifest)}
+              >
+                {manifestReadout(openManifest)}
               </span>
               <span className="shrink-0 font-mono">
                 {singleImage.originalWidth}×{singleImage.originalHeight}px
@@ -146,53 +131,47 @@ export function PreviewCanvas() {
             onAction={() => void openImage()}
           />
         )
-      ) : gallery.length > 0 ? (
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
-            {gallery.map((preview) => (
-              <div
-                key={preview.dataUrl}
-                className="h-44 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900"
-              >
-                <OverlayCanvas
-                  src={preview.dataUrl}
-                  labelSrc={labelSrc}
-                  originalWidth={preview.originalWidth}
-                  originalHeight={preview.originalHeight}
-                  transform={transform}
-                />
-              </div>
-            ))}
-          </div>
-          {batchImages.length > 12 && (
-            <p className="mt-3 text-center text-xs text-zinc-500">
-              Previewing first 12 of {batchImages.length} images — all will be
-              processed during export.
-            </p>
-          )}
-        </div>
+      ) : batchFiles.length > 0 ? (
+        <BatchGallery
+          files={batchFiles}
+          labelSrc={labelSrc}
+          transform={transform}
+        />
       ) : (
         <EmptyState
           title="Select a batch directory"
-          hint="Choose an input directory in the sidebar to preview the first images here."
+          hint="Choose an input directory to preview its images here."
           actionLabel="Choose input directory"
-          onAction={() => void batchPickInput()}
+          onAction={() => void pickBatchInput()}
         />
       )}
 
-      {(lastMessage || lastError) && (
+      {mode === "batch" && (lastMessage || lastError) && (
         <div
-          className={`border-t px-4 py-2 text-sm ${
+          className={`border-t px-3 py-1.5 text-[11px] ${
             lastError
               ? "border-red-900 bg-red-950/60 text-red-300"
               : "border-zinc-800 bg-zinc-900/80 text-zinc-300"
           }`}
         >
-          {lastError ?? lastMessage}
+          <span className="block truncate">{lastError ?? lastMessage}</span>
         </div>
       )}
     </div>
   );
+}
+
+function manifestReadout(manifest: ManifestReadResult | null): string {
+  if (!manifest) return "No manifest";
+  const title = manifest.title ?? "(untitled)";
+  const generator = manifest.claimGenerator ? ` · ${manifest.claimGenerator}` : "";
+  const signature =
+    manifest.signatureValid === true
+      ? "sig valid"
+      : manifest.signatureValid === false
+        ? "sig invalid"
+        : "sig unverified";
+  return `Manifest “${title}”${generator} · ${signature}`;
 }
 
 function fileBaseLabel(path: string | null): string {

@@ -24,7 +24,10 @@ pub fn run() {
             commands::export::process_and_export,
             commands::batch::list_batch_images,
             commands::batch::process_batch_directory,
-            commands::provenance::read_manifest
+            commands::provenance::read_manifest,
+            commands::provenance::validate_signer,
+            commands::settings::load_settings,
+            commands::settings::save_settings
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

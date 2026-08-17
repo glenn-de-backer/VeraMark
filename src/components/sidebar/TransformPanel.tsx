@@ -1,7 +1,7 @@
 import { Slider } from "../ui/Slider";
-import { Toggle } from "../ui/Toggle";
 import { useVeraMarkStore } from "../../stores/useVeraMarkStore";
 import type { Anchor, TransformConfig } from "../../models/label";
+import { MAX_OFFSET_PX } from "../../models/label";
 
 const DOT_POS: Record<Anchor, { x: number; y: number }> = {
   TopLeft: { x: 0.15, y: 0.15 },
@@ -51,28 +51,20 @@ export function TransformPanel() {
         onChange={(value) => setTransform({ scale: value })}
       />
 
-      <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-        <Slider
-          label="Offset X"
-          min={-500}
-          max={500}
-          step={1}
-          value={transform.offsetX}
-          disabled={locked}
-          onChange={(value) => setTransform({ offsetX: value })}
-        />
-        <Toggle
-          label="%"
-          checked={transform.offsetIsPercent}
-          disabled={locked}
-          onChange={(offsetIsPercent) => setTransform({ offsetIsPercent })}
-        />
-      </div>
+      <Slider
+        label="Offset X (px)"
+        min={0}
+        max={MAX_OFFSET_PX}
+        step={1}
+        value={transform.offsetX}
+        disabled={locked}
+        onChange={(value) => setTransform({ offsetX: value })}
+      />
 
       <Slider
-        label="Offset Y"
-        min={-500}
-        max={500}
+        label="Offset Y (px)"
+        min={0}
+        max={MAX_OFFSET_PX}
         step={1}
         value={transform.offsetY}
         disabled={locked}

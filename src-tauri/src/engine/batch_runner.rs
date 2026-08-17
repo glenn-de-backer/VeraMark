@@ -39,7 +39,13 @@ pub fn run_batch(app: &AppHandle, request: BatchRequest) -> Result<BatchResult, 
     let output_dir = PathBuf::from(&request.output_dir);
     std::fs::create_dir_all(&output_dir).map_err(|err| err.to_string())?;
 
-    let files = collect_image_files(&input_dir)?;
+    let files: Vec<PathBuf> = if request.files.is_empty() {
+        // No explicit selection → process every supported image in the directory.
+        collect_image_files(&input_dir)?
+    } else {
+        // Process exactly the user-selected paths (supports select/deselect).
+        request.files.iter().map(PathBuf::from).collect()
+    };
     let total = files.len();
 
     if total == 0 {

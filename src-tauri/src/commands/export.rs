@@ -103,6 +103,13 @@ fn render_preview(path: &Path, max_dim: u32) -> Result<PreviewImage, String> {
     } else {
         img.thumbnail(width, height)
     };
+    // `DynamicImage::thumbnail` recomputes its output size to preserve the
+    // aspect ratio, so the actual resized dimensions can differ by ±1 px from
+    // the requested `(width, height)`. Derive the dims from the real image and
+    // use them for encoding + the returned metadata, otherwise the encoder's
+    // buffer-length contract is violated and it panics (e.g. a 1921×1080
+    // source at max_dim=1920 thumbnails to 1919×1079).
+    let (width, height) = resized.dimensions();
     let has_alpha = resized.color().has_alpha();
 
     let mut bytes: Vec<u8> = Vec::new();
@@ -223,4 +230,49 @@ pub fn process_one_file(
         manifest_label,
         manifest_signed,
     })
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Regression test for the "Invalid buffer length" panic:
+    /// `DynamicImage::thumbnail` recomputes its output size to preserve aspect
+    /// ratio, so it may return a size differing by 1 px from the requested
+    /// dims. `render_preview` must encode using the *actual* resized
+    /// dimensions. With a 1921×1080 source at max_dim=1920 the requested
+    /// target is (1920, 1079) but the thumbnail is (1919, 1079) — previously
+    /// the JPEG encoder was handed the 1919-wide buffer while claiming
+    /// 1920×1079, panicking with a buffer-length assertion.
+    #[test]
+    fn preview_uses_actual_resized_dimensions() {
+        let path = std::env::temp_dir().join("veramark-preview-1921x1080.png");
+
+        let mut img = image::RgbImage::new(1921, 1080);
+        for (x, y, pixel) in img.enumerate_pixels_mut() {
+            *pixel = image::Rgb([(x % 255) as u8, (y % 255) as u8, 120]);
+        }
+        img.save(&path).unwrap();
+
+        let preview = render_preview(&path, 1920).expect("preview must not panic");
+
+        assert_eq!(
+            (preview.width, preview.height),
+            (1919, 1079),
+            "reported preview dimensions must equal the actual thumbnail dims",
+        );
+
+        // The data URL must decode to exactly the reported dimensions.
+        let encoded = preview.data_url.split_once(',').expect("data URL").1;
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(encoded)
+            .unwrap();
+        let decoded = image::load_from_memory(&bytes).unwrap();
+        assert_eq!(
+            (decoded.width(), decoded.height()),
+            (preview.width, preview.height),
+            "preview bytes must match the reported dimensions",
+        );
+
+        let _ = std::fs::remove_file(&path);
+    }
 }

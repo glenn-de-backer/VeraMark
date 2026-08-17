@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Button } from "../ui/Button";
 import { Toggle } from "../ui/Toggle";
@@ -34,6 +35,7 @@ export function ProvenancePanel() {
     }
     try {
       const manifest = await tauri.readManifest(singleImagePath);
+      store.setOpenManifest(manifest);
       if (!manifest) {
         store.setLastMessage("No C2PA manifest found in the selected image.");
       } else {
@@ -107,6 +109,10 @@ export function ProvenancePanel() {
             valuePath={c2pa.signerCertPath}
             onBrowse={() => void browse("signerCertPath")}
           />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-zinc-400">Signing key</span>
+            <KeyStatusBadge />
+          </div>
           <p className="text-[11px] leading-relaxed text-zinc-500">
             Signing keys are used only to create the C2PA claim signature.
             Manifests are never exported without a signature — generate a key
@@ -152,5 +158,74 @@ function PathPicker({
         </span>
       </div>
     </div>
+  );
+}
+type KeyStatus = "disabled" | "not-configured" | "checking" | "valid" | "invalid";
+
+const KEY_STATUS_UI: Record<
+  KeyStatus,
+  { label: string; className: string }
+> = {
+  disabled: {
+    label: "Off",
+    className: "bg-zinc-800 text-zinc-400",
+  },
+  "not-configured": {
+    label: "Not set",
+    className: "bg-amber-950/60 text-amber-300",
+  },
+  checking: {
+    label: "Checking…",
+    className: "bg-zinc-800 text-zinc-300",
+  },
+  valid: {
+    label: "Valid",
+    className: "bg-emerald-950/60 text-emerald-300",
+  },
+  invalid: {
+    label: "Invalid",
+    className: "bg-red-950/60 text-red-300",
+  },
+};
+
+/** Live signer credential status: verified against the real C2PA settings
+ *  builder (same path exports use) whenever the key/cert paths change. */
+function KeyStatusBadge() {
+  const c2pa = useVeraMarkStore((state) => state.c2pa);
+  const [status, setStatus] = useState<KeyStatus>("not-configured");
+
+  useEffect(() => {
+    let cancelled = false;
+    const key = c2pa.signerKeyPath.trim();
+    const cert = c2pa.signerCertPath.trim();
+    if (!c2pa.enabled) {
+      setStatus("disabled");
+      return;
+    }
+    if (!key || !cert) {
+      setStatus("not-configured");
+      return;
+    }
+    setStatus("checking");
+    tauri
+      .validateSigner(key, cert)
+      .then((result) => {
+        if (!cancelled) setStatus(result.valid ? "valid" : "invalid");
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("invalid");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [c2pa.enabled, c2pa.signerKeyPath, c2pa.signerCertPath]);
+
+  const { label, className } = KEY_STATUS_UI[status];
+  return (
+    <span
+      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${className}`}
+    >
+      {label}
+    </span>
   );
 }

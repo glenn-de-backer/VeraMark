@@ -4,8 +4,9 @@ import type {
   BatchProgress,
   C2paSettings,
   ExportFormat,
+  ManifestReadResult,
 } from "../models/c2pa";
-import type { PreviewImage } from "../models/image";
+import type { ImageFileInfo, PreviewImage } from "../models/image";
 import { DEFAULT_C2PA } from "../models/c2pa";
 import { DEFAULT_TRANSFORM } from "../models/label";
 
@@ -43,23 +44,45 @@ interface VeraMarkState {
   singleImagePath: string | null;
   setSingleImage: (image: PreviewImage | null, path: string | null) => void;
 
+  // C2PA manifest of the currently open single image (read on open/export).
+  openManifest: ManifestReadResult | null;
+  setOpenManifest: (manifest: ManifestReadResult | null) => void;
+
   // Batch mode
   batchInputDir: string | null;
   batchOutputDir: string | null;
-  batchImages: PreviewImage[];
+  /**
+   * Metadata (path + dimensions) for every image in the input directory. The
+   * virtualized gallery fetches thumbnails lazily for only the visible tiles,
+   * so this stays memory-cheap regardless of directory size.
+   */
+  batchFiles: ImageFileInfo[];
   setBatchInputDir: (dir: string | null) => void;
   setBatchOutputDir: (dir: string | null) => void;
-  setBatchImages: (images: PreviewImage[]) => void;
+  setBatchFiles: (files: ImageFileInfo[]) => void;
+
+  /**
+   * File paths to EXCLUDE from batch export. Empty set = include every image
+   * in the input directory (the default when a directory is first loaded).
+   * Selected count = total minus the size of this set.
+   */
+  deselectedBatchPaths: Set<string>;
+  toggleBatchSelection: (path: string) => void;
+  selectAllBatch: () => void;
+  selectNoneBatch: () => void;
 
   // Progress & status
   progress: BatchProgress | null;
   batchRunning: boolean;
   lastMessage: string | null;
   lastError: string | null;
+  /** True while a preview/thumbnail batch is being produced by the backend. */
+  imageLoading: boolean;
   setProgress: (progress: BatchProgress | null) => void;
   setBatchRunning: (running: boolean) => void;
   setLastMessage: (message: string | null) => void;
   setLastError: (error: string | null) => void;
+  setImageLoading: (loading: boolean) => void;
 }
 
 export const useVeraMarkStore = create<VeraMarkState>((set) => ({
@@ -78,7 +101,22 @@ export const useVeraMarkStore = create<VeraMarkState>((set) => ({
   transform: { ...DEFAULT_TRANSFORM },
   setSelectedLabelId: (selectedLabelId) => set({ selectedLabelId }),
   setTransform: (partial) =>
-    set((state) => ({ transform: { ...state.transform, ...partial } })),
+    set((state) => ({
+      transform: {
+        ...state.transform,
+        ...partial,
+        // Offsets are non-negative pixel magnitudes; defensively clamp so no
+        // caller can ever store a negative value.
+        offsetX: Math.max(
+          0,
+          Math.round(partial.offsetX ?? state.transform.offsetX),
+        ),
+        offsetY: Math.max(
+          0,
+          Math.round(partial.offsetY ?? state.transform.offsetY),
+        ),
+      },
+    })),
 
   c2pa: { ...DEFAULT_C2PA },
   format: "jpeg",
@@ -93,19 +131,41 @@ export const useVeraMarkStore = create<VeraMarkState>((set) => ({
   setSingleImage: (singleImage, singleImagePath) =>
     set({ singleImage, singleImagePath }),
 
+  openManifest: null,
+  setOpenManifest: (openManifest) => set({ openManifest }),
+
   batchInputDir: null,
   batchOutputDir: null,
-  batchImages: [],
+  batchFiles: [],
   setBatchInputDir: (batchInputDir) => set({ batchInputDir }),
   setBatchOutputDir: (batchOutputDir) => set({ batchOutputDir }),
-  setBatchImages: (batchImages) => set({ batchImages }),
+  setBatchFiles: (batchFiles) => set({ batchFiles }),
+
+  deselectedBatchPaths: new Set<string>(),
+  toggleBatchSelection: (path) =>
+    set((state) => {
+      const next = new Set(state.deselectedBatchPaths);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return { deselectedBatchPaths: next };
+    }),
+  selectAllBatch: () => set({ deselectedBatchPaths: new Set<string>() }),
+  selectNoneBatch: () =>
+    set((state) => ({
+      deselectedBatchPaths: new Set(state.batchFiles.map((file) => file.path)),
+    })),
 
   progress: null,
   batchRunning: false,
   lastMessage: null,
   lastError: null,
+  imageLoading: false,
   setProgress: (progress) => set({ progress }),
   setBatchRunning: (batchRunning) => set({ batchRunning }),
   setLastMessage: (lastMessage) => set({ lastMessage }),
   setLastError: (lastError) => set({ lastError }),
+  setImageLoading: (imageLoading) => set({ imageLoading }),
 }));

@@ -9,6 +9,8 @@ use crate::models::{C2paSettings, ExportFormat, TransformConfig};
 pub struct BatchRequest {
     pub input_dir: String,
     pub output_dir: String,
+    /// Exact image paths to process; empty means "process the whole directory".
+    pub files: Vec<String>,
     pub label_id: String,
     pub transform: TransformConfig,
     pub format: ExportFormat,

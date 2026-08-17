@@ -43,7 +43,8 @@ export interface ManifestReadResult {
 }
 
 export const DEFAULT_C2PA: C2paSettings = {
-  enabled: true,
+  /** C2PA embedding is opt-in — off until the user enables it and signs. */
+  enabled: false,
   claimGeneratorName: "VeraMark",
   claimGeneratorVersion: "0.1.0",
   producerTrainedOnData: false,

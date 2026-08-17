@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { TransformConfig } from "../../models/label";
 import { computeOverlayRect } from "../../utils/transform";
+import { Spinner } from "../ui/Spinner";
 
 interface OverlayCanvasProps {
   src: string;
@@ -56,6 +57,7 @@ export function OverlayCanvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -78,6 +80,7 @@ export function OverlayCanvas({
     if (!canvas || containerSize.w <= 0 || containerSize.h <= 0) return;
 
     let cancelled = false;
+    setLoading(true);
 
     void (async () => {
       try {
@@ -124,6 +127,8 @@ export function OverlayCanvas({
         }
       } catch (error) {
         console.error("OverlayCanvas render failed:", error);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
 
@@ -138,6 +143,11 @@ export function OverlayCanvas({
         ref={canvasRef}
         className="absolute left-1/2 top-1/2 max-h-full max-w-full -translate-x-1/2 -translate-y-1/2"
       />
+      {loading && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg bg-zinc-950/30">
+          <Spinner className="h-6 w-6" />
+        </div>
+      )}
     </div>
   );
 }

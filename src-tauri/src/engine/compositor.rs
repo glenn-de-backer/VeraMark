@@ -101,10 +101,25 @@ fn label_pivot(anchor: Anchor, w: f64, h: f64) -> (f64, f64) {
     }
 }
 
+/// Axis direction a positive offset moves the label toward the image interior,
+/// per anchor. Mirrors `utils/transform.ts::offsetDirection`.
+///
+/// Corner / edge anchors push away from the anchored edge (e.g. `BottomRight`
+/// nudge = left/up); Center / centered anchors have no edge to push away from,
+/// so +X always moves right and +Y always moves down (fixed convention).
+fn offset_direction(anchor: Anchor) -> (f64, f64) {
+    match anchor {
+        Anchor::TopLeft | Anchor::TopCenter | Anchor::Center => (1.0, 1.0),
+        Anchor::TopRight => (-1.0, 1.0),
+        Anchor::BottomLeft | Anchor::BottomCenter => (1.0, -1.0),
+        Anchor::BottomRight => (-1.0, -1.0),
+    }
+}
+
 /// Mirrors `utils/transform.ts` exactly:
 /// 1. label width = min(imageW, imageH) × scale (aspect preserved)
 /// 2. pivot snaps onto the cardinal anchor
-/// 3. offset applied (absolute px, or % of image dims)
+/// 3. non-negative offset applied (always toward the image interior)
 /// 4. clamped so the label stays fully visible
 pub fn compute_overlay_rect(
     image_w: u32,
@@ -129,19 +144,13 @@ pub fn compute_overlay_rect(
     let (anchor_x, anchor_y) = anchor_point(transform.anchor, image_w, image_h);
     let (pivot_x, pivot_y) = label_pivot(transform.anchor, label_width, label_height);
 
-    let offset_x = if transform.offset_is_percent {
-        image_w * transform.offset_x as f64 / 100.0
-    } else {
-        transform.offset_x as f64
-    };
-    let offset_y = if transform.offset_is_percent {
-        image_h * transform.offset_y as f64 / 100.0
-    } else {
-        transform.offset_y as f64
-    };
+    // Non-negative magnitude; negative values are rejected (clamped to 0).
+    let (dir_x, dir_y) = offset_direction(transform.anchor);
+    let offset_x = transform.offset_x.max(0) as f64;
+    let offset_y = transform.offset_y.max(0) as f64;
 
-    let raw_x = anchor_x - pivot_x + offset_x;
-    let raw_y = anchor_y - pivot_y + offset_y;
+    let raw_x = anchor_x - pivot_x + dir_x * offset_x;
+    let raw_y = anchor_y - pivot_y + dir_y * offset_y;
 
     let x = js_round(clamp_f64(raw_x, 0.0, image_w - label_width));
     let y = js_round(clamp_f64(raw_y, 0.0, image_h - label_height));

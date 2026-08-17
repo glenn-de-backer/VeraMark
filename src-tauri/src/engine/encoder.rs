@@ -2,7 +2,8 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
 
-use image::{ExtendedColorType, ImageEncoder as _, RgbaImage};
+use image::ExtendedColorType;
+use image::{GenericImageView, ImageEncoder as _, RgbaImage};
 
 use crate::engine::compositor::Composited;
 use crate::models::ExportFormat;
@@ -45,22 +46,24 @@ fn encode_png(composed: &Composited, output_path: &Path) -> Result<u64, EncodeEr
     }
 
     if let Some(rgba16) = &composed.rgba16 {
+        let (width, height) = rgba16.dimensions();
         let mut raw: Vec<u8> = Vec::with_capacity(rgba16.as_raw().len() * 2);
         for value in rgba16.as_raw() {
             raw.extend_from_slice(&value.to_ne_bytes());
         }
         encoder.write_image(
             &raw,
-            composed.width,
-            composed.height,
+            width,
+            height,
             ExtendedColorType::Rgba16,
         )?;
     } else {
         let rgba8 = composed.rgba8.as_ref().ok_or(EncodeError::Empty)?;
+        let (width, height) = rgba8.dimensions();
         encoder.write_image(
             rgba8.as_raw(),
-            composed.width,
-            composed.height,
+            width,
+            height,
             ExtendedColorType::Rgba8,
         )?;
     }
@@ -117,12 +120,13 @@ fn encode_jpeg(
     output_path: &Path,
 ) -> Result<u64, EncodeError> {
     let rgba8 = flatten_to_rgba8(composed)?;
+    let (width, height) = rgba8.dimensions();
     let rgb = flatten_to_rgb(&rgba8);
     let mut buffer = Vec::with_capacity(rgb.len() / 2);
     {
         let mut encoder =
             image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buffer, quality.clamp(1, 100));
-        encoder.encode(&rgb, composed.width, composed.height, ExtendedColorType::Rgb8)?;
+        encoder.encode(&rgb, width, height, ExtendedColorType::Rgb8)?;
     }
     std::fs::write(output_path, &buffer)?;
     Ok(buffer.len() as u64)

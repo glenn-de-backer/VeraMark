@@ -40,7 +40,7 @@ export function LabelCatalog() {
 
   return (
     <div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1.5">
         {labels.map((label) => {
           const active = label.id === selectedLabelId;
           return (
@@ -51,7 +51,7 @@ export function LabelCatalog() {
                 useVeraMarkStore.getState().setSelectedLabelId(label.id)
               }
               title={label.name}
-              className={`group flex flex-col items-center gap-1 rounded-md border p-2 transition-colors ${
+              className={`group flex w-full items-center justify-center rounded-md border p-2 transition-colors ${
                 active
                   ? "border-sky-500 bg-sky-500/10"
                   : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-500"
@@ -60,16 +60,9 @@ export function LabelCatalog() {
               <img
                 src={label.dataUrl}
                 alt={label.name}
-                className="h-10 w-full object-contain"
+                className="h-12 w-full object-contain"
                 loading="lazy"
               />
-              <span
-                className={`w-full truncate text-center text-[10px] ${
-                  active ? "text-sky-300" : "text-zinc-400"
-                }`}
-              >
-                {label.name}
-              </span>
             </button>
           );
         })}

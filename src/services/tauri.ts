@@ -20,6 +20,19 @@ export interface LoadLabelsResult {
   errors: string[];
 }
 
+export interface SignerStatusResult {
+  configured: boolean;
+  valid: boolean;
+  error: string | null;
+}
+
+/** Mirrors `src-tauri/src/commands/settings.rs::SettingsFile`. */
+export interface SettingsFile {
+  c2pa: C2paSettings;
+  format: ExportFormat;
+  jpegQuality: number;
+}
+
 export interface ExportCommandRequest {
   inputPath: string;
   outputPath: string;
@@ -33,6 +46,8 @@ export interface ExportCommandRequest {
 export interface BatchCommandRequest {
   inputDir: string;
   outputDir: string;
+  /** Exact image paths to process; empty means "process the whole directory". */
+  files: string[];
   labelId: string;
   transform: TransformConfig;
   format: ExportFormat;
@@ -52,7 +67,7 @@ export const tauri = {
     invoke<LoadLabelsResult>("refresh_labels"),
 
   previewImage: (path: string, maxDim: number): Promise<PreviewImage> =>
-    invoke<PreviewImage>("preview_image", { path, maxDim }),
+    invoke<PreviewImage>("preview_image", { request: { path, maxDim } }),
 
   processAndExport: (request: ExportCommandRequest): Promise<ExportResult> =>
     invoke<ExportResult>("process_and_export", { request }),
@@ -65,6 +80,18 @@ export const tauri = {
 
   readManifest: (path: string): Promise<ManifestReadResult | null> =>
     invoke<ManifestReadResult | null>("read_manifest", { path }),
+
+  validateSigner: (
+    keyPath: string,
+    certPath: string,
+  ): Promise<SignerStatusResult> =>
+    invoke<SignerStatusResult>("validate_signer", { keyPath, certPath }),
+
+  loadSettings: (): Promise<SettingsFile> =>
+    invoke<SettingsFile>("load_settings"),
+
+  saveSettings: (settings: SettingsFile): Promise<null> =>
+    invoke<null>("save_settings", { settings }),
 
   watchLabels: (): Promise<null> => invoke<null>("watch_labels"),
 };

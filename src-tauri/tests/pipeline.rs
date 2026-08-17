@@ -11,12 +11,12 @@ fn fixtures_dir() -> PathBuf {
         .join("fixtures")
 }
 
-fn label_svg() -> PathBuf {
+fn label_png() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join("assets")
         .join("labels")
-        .join("AI-Generated.svg")
+        .join("LABEL_AI_white.png")
 }
 
 fn make_test_source(path: &Path, width: u32, height: u32) {
@@ -41,7 +41,6 @@ fn overlay_geometry_matches_type_script_spec() {
         scale: 0.25,
         offset_x: 0,
         offset_y: 0,
-        offset_is_percent: false,
     };
 
     // Image 800x600 (bounding box = min = 600), label 360x160 (160/360 ratio):
@@ -52,21 +51,45 @@ fn overlay_geometry_matches_type_script_spec() {
     assert_eq!((rect.w, rect.h), (150, 67));
     assert_eq!((rect.x, rect.y), (650, 533));
 
-    // Percent offsets shift relative to the image dimensions.
-    let transform_pct = TransformConfig {
+    // Non-negative offsets shift the label from the anchor. Center follows the
+    // fixed convention +X = right, +Y = down.
+    let transform_px = TransformConfig {
         anchor: Anchor::Center,
         scale: 0.1,
-        offset_x: 10,
-        offset_y: -5,
-        offset_is_percent: true,
+        offset_x: 100,
+        offset_y: 25,
         ..transform
     };
     // Image 1000x500, label 400x200: lw = 50, lh = 25.
     // anchor = (500, 250); pivot = (25, 12.5);
-    // offset = (100, -25) → x = 500 - 25 + 100 = 575; y = 250 - 12.5 - 25 = 212.5 → 213
-    let rect = compute_overlay_rect(1000, 500, 400, 200, &transform_pct);
+    // offset = (100, 25) → x = 500 - 25 + 100 = 575; y = 250 - 12.5 + 25 = 262.5 → 263
+    let rect = compute_overlay_rect(1000, 500, 400, 200, &transform_px);
     assert_eq!((rect.w, rect.h), (50, 25));
-    assert_eq!((rect.x, rect.y), (575, 213));
+    assert_eq!((rect.x, rect.y), (575, 263));
+
+    // Corner anchors push toward the interior: a positive bottom-right offset
+    // translates to left/up in screen space.
+    let transform_br = TransformConfig {
+        anchor: Anchor::BottomRight,
+        scale: 0.25,
+        offset_x: 20,
+        offset_y: 12,
+        ..transform
+    };
+    let rect = compute_overlay_rect(800, 600, 360, 160, &transform_br);
+    // flush = (650, 533); offset (20, 12) → (630, 521)
+    assert_eq!((rect.x, rect.y), (630, 521));
+
+    // Negative offsets are rejected (clamped to 0) and behave like no offset.
+    let transform_neg = TransformConfig {
+        anchor: Anchor::BottomRight,
+        scale: 0.25,
+        offset_x: -20,
+        offset_y: -12,
+        ..transform
+    };
+    let rect = compute_overlay_rect(800, 600, 360, 160, &transform_neg);
+    assert_eq!((rect.x, rect.y), (650, 533));
 }
 
 #[test]
@@ -76,13 +99,12 @@ fn png_pipeline_with_c2pa_round_trip() {
     let output = dir.join("out-signed.png");
     make_test_source(&source, 1280, 800);
 
-    let label = Some((std::fs::read(label_svg()).unwrap(), LabelKind::Svg));
+    let label = Some((std::fs::read(label_png()).unwrap(), LabelKind::Png));
     let transform = TransformConfig {
         anchor: Anchor::BottomRight,
         scale: 0.22,
-        offset_x: -20,
-        offset_y: -12,
-        offset_is_percent: false,
+        offset_x: 20,
+        offset_y: 12,
     };
     let c2pa = C2paSettings {
         enabled: true,
@@ -170,7 +192,6 @@ fn jpeg_pipeline_flattens_alpha_without_manifest() {
         scale: 0.5,
         offset_x: 0,
         offset_y: 0,
-        offset_is_percent: false,
     };
     let c2pa = C2paSettings {
         enabled: false,

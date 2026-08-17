@@ -16,12 +16,20 @@ export interface TransformConfig {
   anchor: Anchor;
   /** Normalized relative scale (0.01..1.0) of the image bounding box. */
   scale: number;
-  /** X offset — absolute pixels, or % of image width when `offsetIsPercent`. */
+  /**
+   * Non-negative X offset (px) from the anchor point, always moving the label
+   * toward the image interior. Negative values are clamped to 0.
+   */
   offsetX: number;
-  /** Y offset — absolute pixels, or % of image height when `offsetIsPercent`. */
+  /**
+   * Non-negative Y offset (px) from the anchor point, always moving the label
+   * toward the image interior. Negative values are clamped to 0.
+   */
   offsetY: number;
-  offsetIsPercent: boolean;
 }
+
+/** Upper bound (px) for the non-negative X/Y offset sliders. */
+export const MAX_OFFSET_PX = 500;
 
 export interface LabelAsset {
   /** File name (`ai-generated-v2.svg`) — the id the Rust backend keys on. */
@@ -58,5 +66,4 @@ export const DEFAULT_TRANSFORM: TransformConfig = {
   scale: 0.25,
   offsetX: 0,
   offsetY: 0,
-  offsetIsPercent: false,
 };
