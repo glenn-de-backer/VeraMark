@@ -14,20 +14,21 @@ It runs locally on your computer as a fast, private desktop app with live previe
 
 ## Key Highlights
 
-* **EU AI Act Article 50 Ready:** Meets transparency and machine-readability compliance mandates specifically for AI-generated and edited images.
-* **Dual Attribution:** Combines visible on-canvas badges with invisible, machine-readable C2PA manifests.
-* **High-Speed Batch Processing:** Process and sign entire directories in parallel with live progress updates.
-* **Dynamic Auto-Scaling:** Automatically proportions labels to image dimensions with precise anchor and offset controls.
-* **WYSIWYG Fidelity:** Guaranteed 1:1 parity between canvas preview positioning and final exported output.
+* **EU AI Act Article 50 Ready:** Meets transparency and machine-readability compliance mandates specifically for AI-generated and edited images[cite: 3].
+* **Dual Attribution:** Combines visible on-canvas badges with invisible, machine-readable C2PA manifests[cite: 3].
+* **High-Speed Batch Processing:** Process and sign entire directories in parallel with live progress updates[cite: 3].
+* **Dynamic Auto-Scaling:** Automatically proportions labels to image dimensions with precise anchor and offset controls[cite: 3].
+* **WYSIWYG Fidelity:** Guaranteed 1:1 parity between canvas preview positioning and final exported output[cite: 3].
 
 ---
 
 ## Core Features
 
-* **Single & Batch Processing:** Process individual files with fine-grained anchor/scale controls or run parallelized folder conversions with live progress updates.
-* **C2PA Provenance Manifests:** Generates `c2pa.created` and `c2pa.edited` action assertions, claim generator data, trained-source flags, and cryptographic `ps256` signatures via the `c2pa-rs` Builder API.
-* **Format Support:** High-fidelity PNG (8/16-bit, alpha preservation, best-effort ICC) and configurable JPEG output.
-* **Live Directory Watching:** Automatically registers new overlay assets dropped into the labels directory.
+* **Precision Placement & Transform:** Anchor badges to corners, center, or edges with fine-tuned margin, scale, and offset controls[cite: 3].
+* **Single & Batch Processing:** Process individual files with instant WYSIWYG feedback or run parallelized folder conversions with live progress updates[cite: 3].
+* **C2PA Provenance Manifests:** Generates `c2pa.created` and `c2pa.edited` action assertions, claim generator data, trained-source flags, and cryptographic `ps256` signatures via the `c2pa-rs` Builder API[cite: 3].
+* **Configurable Export Formats:** Export to high-fidelity PNG (8/16-bit, alpha preservation, best-effort ICC) or customizable JPEG with fine-grained compression quality controls[cite: 3].
+* **Live Directory Watching:** Automatically registers new overlay assets dropped into the labels directory[cite: 3].
 
 ---
 
