@@ -8,6 +8,8 @@ When you generate or modify images with AI, proving where they came from or bein
 
 It runs locally on your computer as a fast, private desktop app with live previews and batch-processing support.
 
+![VeraMark Gui](screenshot.jpg)
+
 ---
 
 ## Key Highlights

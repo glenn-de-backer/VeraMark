@@ -60,36 +60,36 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
         </div>
 
         <div className="space-y-4 px-5 py-4 text-sm text-zinc-300">
+          <p className="text-xs font-medium text-zinc-400">
+            Made by Glenn De Backer
+          </p>
+
           <p>
-            VeraMark overlays configurable AI-attribution labels on your images
-            and embeds cryptographically signed{" "}
+            VeraMark lets you mark, certify, and prove the origin of
+            AI-generated or edited images. It overlays visible, standardized
+            AI-attribution labels on your images and embeds secure,
+            cryptographically signed C2PA content credentials — for a single
+            image or an entire directory at once.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
+            <span className="text-zinc-500">Find VeraMark online:</span>
             <a
-              href="https://c2pa.org"
+              href="http://www.glenndebacker.be"
               target="_blank"
               rel="noreferrer"
               className="text-sky-400 underline-offset-2 hover:underline"
             >
-              C2PA&nbsp;/&nbsp;CAI
-            </a>{" "}
-            provenance manifests — for a single image or an entire directory at
-            once.
-          </p>
-
-          <ul className="list-disc space-y-1 pl-5 text-xs text-zinc-400">
-            <li>Split-pane canvas with real-time label placement feedback</li>
-            <li>Signed C2PA manifests — never an unsigned claim</li>
-            <li>Parallel batch export with live progress reporting</li>
-            <li>PNG (lossless) and JPEG (quality-controlled) output</li>
-          </ul>
-
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2.5 text-xs text-zinc-500">
-            <span className="mb-1 block font-medium text-zinc-400">Stack</span>
-            <p>
-              Tauri v2 · Rust (<code className="text-zinc-400">image</code>,{" "}
-              <code className="text-zinc-400">c2pa</code>,{" "}
-              <code className="text-zinc-400">rayon</code>) · React + TypeScript +
-              Tailwind CSS v4
-            </p>
+              www.glenndebacker.be
+            </a>
+            <a
+              href="https://github.com/glenn-de-backer/VeraMark"
+              target="_blank"
+              rel="noreferrer"
+              className="text-sky-400 underline-offset-2 hover:underline"
+            >
+              GitHub
+            </a>
           </div>
         </div>
 
